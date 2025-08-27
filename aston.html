@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Join the Dots (Animated + Reset)</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      text-align: center;
+      font-family: sans-serif;
+    }
+
+    h2 {
+      margin-top: 20px;
+    }
+
+    #canvasContainer {
+      width: 100%;
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      border: 2px solid #333;
+      background-color: #f0f0f0;
+      display: block;
+    }
+
+    button {
+      margin: 15px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h2>🧠 Join the Dots Game</h2>
+  <div id="canvasContainer">
+    <canvas id="dotCanvas"></canvas>
+  </div>
+  <button onclick="resetGame()">🔁 Reset</button>
+
+  <script>
+    const canvas = document.getElementById('dotCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const rawCoords = "1469,180,1613,175,1707,89,1949,91,2171,91,2456,89,2717,91,2928,110,2891,185,2850,191,2805,274,2758,282,2706,358,2560,407,2398,454,2195,509,2116,603,1983,640,1837,677,1628,729,1487,622,1326,734,1133,692,1007,650,848,601,759,512,613,470,488,434,342,389,248,358,198,279,144,264,107,193,65,188,23,110,196,94,404,97,595,99,814,102,1049,97,1279,97,1349,180";
+    const coordsArray = rawCoords.split(',').map(Number);
+
+    const originalWidth = 3000;
+    const originalHeight = 800;
+
+    let dots = [];
+    let clickedDots = [];
+    let animationIndex = 0;
+
+    function resizeCanvas() {
+      canvas.width = canvas.clientWidth;
+      canvas.height = canvas.clientWidth * (originalHeight / originalWidth);
+      scaleDots();
+      drawDots();
+    }
+
+    function scaleDots() {
+      const scaleX = canvas.width / originalWidth;
+      const scaleY = canvas.height / originalHeight;
+      dots = [];
+      for (let i = 0; i < coordsArray.length; i += 2) {
+        dots.push({
+          x: coordsArray[i] * scaleX,
+          y: coordsArray[i + 1] * scaleY
+        });
+      }
+    }
+
+    function drawDots() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.font = "14px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      dots.forEach((dot, index) => {
+        ctx.beginPath();
+        ctx.arc(dot.x, dot.y, 10, 0, Math.PI * 2);
+        ctx.fillStyle = 'blue';
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = 'white';
+        ctx.fillText(index + 1, dot.x, dot.y);
+      });
+
+      animateLines();
+    }
+
+    function animateLines() {
+      if (clickedDots.length < 2) return;
+
+      ctx.beginPath();
+      ctx.moveTo(clickedDots[0].x, clickedDots[0].y);
+
+      let i = 1;
+      function drawSegment() {
+        if (i >= clickedDots.length) return;
+
+        ctx.lineTo(clickedDots[i].x, clickedDots[i].y);
+        ctx.strokeStyle = 'green';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        i++;
+        setTimeout(drawSegment, 100); // Delay between segments
+      }
+
+      drawSegment();
+    }
+
+    canvas.addEventListener('click', function (e) {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      dots.forEach(dot => {
+        const dx = dot.x - mouseX;
+        const dy = dot.y - mouseY;
+        if (Math.sqrt(dx * dx + dy * dy) < 12 && !clickedDots.includes(dot)) {
+          clickedDots.push(dot);
+          drawDots();
+
+          if (clickedDots.length === dots.length) {
+            setTimeout(() => alert('🎉 You connected all the dots!'), 100);
+          }
+        }
+      });
+    });
+
+    function resetGame() {
+      clickedDots = [];
+      drawDots();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+  </script>
+</body>
+</html>
