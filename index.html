@@ -129,6 +129,7 @@ button:active {
 
     let dots = [];
     let clickedDots = [];
+    let hoveredDotIndex = null;
 
     function resizeCanvas() {
       canvas.width = canvas.clientWidth;
@@ -159,11 +160,15 @@ button:active {
     ctx.beginPath();
     ctx.arc(dot.x, dot.y, 10, 0, Math.PI * 2);
 
-    // Check if clicked
     const isClicked = clickedDots.includes(dot);
-    ctx.fillStyle = isClicked ? 'limegreen' : 'blue';
+    const isHovered = index === hoveredDotIndex;
+
+    ctx.fillStyle = isClicked ? 'limegreen' : (isHovered ? '#ffcc00' : 'blue');
+    ctx.shadowColor = isHovered ? '#ffcc00' : 'transparent';
+    ctx.shadowBlur = isHovered ? 10 : 0;
     ctx.fill();
 
+    ctx.shadowBlur = 0; // reset shadow
     ctx.fillStyle = 'white';
     ctx.fillText(index + 1, dot.x, dot.y);
   });
@@ -202,7 +207,7 @@ button:active {
       dots.forEach((dot, index) => {
         const dx = dot.x - mouseX;
         const dy = dot.y - mouseY;
-        if (Math.sqrt(dx * dx + dy * dy) < 12) {
+        if (Math.sqrt(dx * dx + dy * dy) < 24) {
           if (index === clickedDots.length) {
             clickedDots.push(dot);
             drawDots();
@@ -226,6 +231,29 @@ button:active {
       });
     });
 
+    canvas.addEventListener('mousemove', function (e) {
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+
+  hoveredDotIndex = null;
+
+  dots.forEach((dot, index) => {
+    const dx = dot.x - mouseX;
+    const dy = dot.y - mouseY;
+    if (Math.sqrt(dx * dx + dy * dy) < 20) {
+      hoveredDotIndex = index;
+    }
+  });
+
+  drawDots();
+});
+
+    canvas.addEventListener('mouseleave', function () {
+  hoveredDotIndex = null;
+  drawDots();
+});
+
     function showWarning() {
       warning.style.display = 'block';
       setTimeout(() => {
@@ -244,3 +272,4 @@ button:active {
   </script>
 </body>
 </html>
+
