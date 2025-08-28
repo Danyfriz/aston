@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Join the Dots (Animated + Reset)</title>
+  <title>Join the Dots (With Audio on Correct Guess)</title>
   <style>
     body {
       margin: 0;
@@ -35,6 +35,13 @@
       font-size: 16px;
       cursor: pointer;
     }
+
+    #warning {
+      color: red;
+      font-weight: bold;
+      margin-top: 10px;
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -43,10 +50,16 @@
     <canvas id="dotCanvas"></canvas>
   </div>
   <button onclick="resetGame()">🔁 Reset</button>
+  <div id="warning">⚠️ Wrong dot! Try the next one in order.</div>
+
+  <!-- Audio element for success -->
+  <audio id="successAudio" src="Download-_4_-17.7-18.5.mp3"></audio>
 
   <script>
     const canvas = document.getElementById('dotCanvas');
     const ctx = canvas.getContext('2d');
+    const warning = document.getElementById('warning');
+    const successAudio = document.getElementById('successAudio');
 
     const rawCoords = "1469,180,1613,175,1707,89,1949,91,2171,91,2456,89,2717,91,2928,110,2891,185,2850,191,2805,274,2758,282,2706,358,2560,407,2398,454,2195,509,2116,603,1983,640,1837,677,1628,729,1487,622,1326,734,1133,692,1007,650,848,601,759,512,613,470,488,434,342,389,248,358,198,279,144,264,107,193,65,188,23,110,196,94,404,97,595,99,814,102,1049,97,1279,97,1349,180";
     const coordsArray = rawCoords.split(',').map(Number);
@@ -56,7 +69,6 @@
 
     let dots = [];
     let clickedDots = [];
-    let animationIndex = 0;
 
     function resizeCanvas() {
       canvas.width = canvas.clientWidth;
@@ -88,7 +100,6 @@
         ctx.arc(dot.x, dot.y, 10, 0, Math.PI * 2);
         ctx.fillStyle = 'blue';
         ctx.fill();
-        ctx.stroke();
 
         ctx.fillStyle = 'white';
         ctx.fillText(index + 1, dot.x, dot.y);
@@ -100,20 +111,20 @@
     function animateLines() {
       if (clickedDots.length < 2) return;
 
-      ctx.beginPath();
-      ctx.moveTo(clickedDots[0].x, clickedDots[0].y);
-
       let i = 1;
+
       function drawSegment() {
         if (i >= clickedDots.length) return;
 
+        ctx.beginPath();
+        ctx.moveTo(clickedDots[i - 1].x, clickedDots[i - 1].y);
         ctx.lineTo(clickedDots[i].x, clickedDots[i].y);
         ctx.strokeStyle = 'green';
         ctx.lineWidth = 2;
         ctx.stroke();
 
         i++;
-        setTimeout(drawSegment, 100); // Delay between segments
+        requestAnimationFrame(drawSegment);
       }
 
       drawSegment();
@@ -124,23 +135,43 @@
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
 
-      dots.forEach(dot => {
+      dots.forEach((dot, index) => {
         const dx = dot.x - mouseX;
         const dy = dot.y - mouseY;
-        if (Math.sqrt(dx * dx + dy * dy) < 12 && !clickedDots.includes(dot)) {
-          clickedDots.push(dot);
-          drawDots();
+        if (Math.sqrt(dx * dx + dy * dy) < 12) {
+          if (index === clickedDots.length) {
+            clickedDots.push(dot);
+            drawDots();
 
-          if (clickedDots.length === dots.length) {
-            setTimeout(() => alert('🎉 You connected all the dots!'), 100);
+            if (clickedDots.length === dots.length) {
+              setTimeout(() => {
+                const guess = prompt("🎯 What is the name of the thing revealed?");
+                if (guess && guess.trim().toLowerCase() === "aston martin") {
+                  successAudio.play();
+                  alert("🏁 Correct! It's an Aston Martin. Well done!");
+                } else {
+                  alert("❌ Not quite. Try again next time!");
+                }
+              }, 300);
+            }
+          } else {
+            showWarning();
           }
         }
       });
     });
 
+    function showWarning() {
+      warning.style.display = 'block';
+      setTimeout(() => {
+        warning.style.display = 'none';
+      }, 2000);
+    }
+
     function resetGame() {
       clickedDots = [];
       drawDots();
+      warning.style.display = 'none';
     }
 
     window.addEventListener('resize', resizeCanvas);
